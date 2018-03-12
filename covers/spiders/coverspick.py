@@ -12,19 +12,26 @@ class CoverspickSpider(scrapy.Spider):
     date_string = ''
 
     def parse(self, response):
+        # %% review purpose: yesterday game list
+        previous_page = response.xpath('//*[@class="cmg_matchup_three_day_navigation"]/a[1]/@href').extract_first()
+        # # '/Sports/NBA/Matchups?selectedDate=2018-03-09'
+        page_yestoday = response.urljoin(previous_page)
+
         # %% predict analysis purpose: tomorrow game list
         next_page = response.xpath('//*[@class="cmg_matchup_three_day_navigation"]/a[3]/@href').extract_first()
         page_tmr = response.urljoin(next_page)
 
-        # %% review purpose: today game list
+        # %% today: alive games (game finished or not determined by the time)
         current_page = response.xpath('//*[@class="cmg_matchup_three_day_navigation"]/a[2]/@href').extract_first()
-        # # '/Sports/NBA/Matchups?selectedDate=2018-03-09'
         page_today = response.urljoin(current_page)
+
 
         # current date
         self.date_string = current_page[current_page.find('='):]
 
-        the_page = page_today
+
+        # page to crawl
+        the_page = page_yestoday
         yield scrapy.Request(the_page, callback=self.parse_gamelist)
 
 
@@ -71,18 +78,17 @@ class CoverspickSpider(scrapy.Spider):
         '''
         find the real link to the expert lines api, then send requests.
         '''
-        def prepare_item(self, picks_ats_away, this_game_string, pick_product):
-            for pick in picks_ats_away[1:]:
-                item = CoversItem()
-                item['pick_product'] = pick_product
+        def prepare_item(this_game_string, pick_product):
+            item = CoversItem()
+            item['pick_product'] = pick_product
 
-                item['date'] = self.date_string
-                item['game'] = this_game_string
+            item['date'] = self.date_string
+            item['game'] = this_game_string
 
-                item['leader'] = pick.xpath('td[1]//text()').extract_first()
-                item['pick_team'] = pick.xpath('td[2]/div/a//text()').extract_first()
-                item['pick_line'] = pick.xpath('td[2]/div/span//text()').extract_first()
-                item['pick_desc'] = pick.xpath('td[3]//text()').extract_first()
+            item['leader'] = pick.xpath('td[1]//text()').extract_first()
+            item['pick_team'] = pick.xpath('td[2]/div/a//text()').extract_first()
+            item['pick_line'] = pick.xpath('td[2]/div/span//text()').extract_first()
+            item['pick_desc'] = pick.xpath('td[3]//text()').extract_first()
             return item
 
 
@@ -94,13 +100,15 @@ class CoverspickSpider(scrapy.Spider):
 
         # item for ats_away
         picks_ats_away = response.xpath('/html/body/div[1]/table/tbody/tr')
-        item = prepare_item(self, picks_ats_away, this_game, 'ats_away')
-        yield item
+        for pick in picks_ats_away[1:]:
+            item = prepare_item(this_game, 'ats_away')
+            yield item
 
         # item for ats_home
         picks_ats_home = response.xpath('/html/body/div[2]/table/tbody/tr')
-        item = prepare_item(self, picks_ats_home, this_game, 'ats_home')
-        yield item
+        for pick in picks_ats_home[1:]:
+            item = prepare_item(this_game, 'ats_home')
+            yield item
 
         # item for ov_over
         # item for ov_under

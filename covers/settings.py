@@ -36,6 +36,13 @@ RANDOMIZE_DOWNLOAD_DELAY = False
 COOKIES_ENABLED = False # default: enabled
 
 
+ITEM_PIPELINES = {
+   'covers.pipelines.pipelines.JsonWriterPipeline': 100,
+#    'covers.pipelines.CoversPipeline': 300,
+#    'covers.pipelines.JsonWriterPipeline': 300,
+}
+
+
 
 
 
