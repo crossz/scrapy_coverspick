@@ -7,9 +7,9 @@ from covers.items import CoversItem
 class CoverspickSpider(scrapy.Spider):
     name = 'coverspick'
     allowed_domains = ['covers.com']
-    start_urls = ['https://www.covers.com/sports/nba/matchups/']
+    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-03-01']
 
-    date_string = ''
+    days = 1
 
     def parse(self, response):
         # %% review purpose: yesterday game list
@@ -26,21 +26,15 @@ class CoverspickSpider(scrapy.Spider):
         page_today = response.urljoin(current_page)
 
 
-        # current date
-        self.date_string = current_page[current_page.find('='):]
-
-
         # page to crawl
-        the_page = page_yestoday
-        yield scrapy.Request(the_page, callback=self.parse_gamelist)
-
-
-    def parse_gamelist(self, response):
-        '''
-        follow links to consensus page for each game.
-        '''
+        the_page = page_today
+        # yield scrapy.Request(the_page, callback=self.parse_gamelist)
         for href in response.xpath('//*[@id="content"]//div//a[.="Consensus"]/@href'):
             yield response.follow(href, self.parse_consensus_page)
+
+
+        if int(page_tmr[-2:]) <= int(self.start_urls[0][-2:]) + self.days:
+            yield scrapy.Request(page_tmr, callback=self.parse)
 
 
     def parse_consensus_page(self, response):
@@ -55,7 +49,13 @@ class CoverspickSpider(scrapy.Spider):
         expert_api_url = expertApi_prefix + gameHash
         # print(' ------------------========================------------------------- ' + expert_api_url)
 
-        yield scrapy.Request(expert_api_url, callback=self.parse_consensus_expertlines)
+
+        # current date
+        date_string = response.xpath('//*[@id="mainContainer"]/p/text()').extract()[2].split(',')[1].strip()
+        ## ' - Thursday, March 1, 2018 7:30 PM\r\n'
+
+
+        yield scrapy.Request(expert_api_url, callback=self.parse_consensus_expertlines, meta={'date_string':date_string})
         
 
         # %% issues:
@@ -78,11 +78,12 @@ class CoverspickSpider(scrapy.Spider):
         '''
         find the real link to the expert lines api, then send requests.
         '''
+
         def prepare_item(this_game_string, pick_product):
             item = CoversItem()
             item['pick_product'] = pick_product
 
-            item['date'] = self.date_string
+            item['date'] = response.meta['date_string']
             item['game'] = this_game_string
 
             item['leader'] = pick.xpath('td[1]//text()').extract_first()
@@ -100,15 +101,17 @@ class CoverspickSpider(scrapy.Spider):
 
         # item for ats_away
         picks_ats_away = response.xpath('/html/body/div[1]/table/tbody/tr')
-        for pick in picks_ats_away[1:]:
-            item = prepare_item(this_game, 'ats_away')
-            yield item
+        if len(picks_ats_away.extract()) > 1:
+            temp1 = list([picks_ats_away[1]])
+            for pick in temp1:
+                item = prepare_item(this_game, 'ats_away')
+                yield item
 
-        # item for ats_home
-        picks_ats_home = response.xpath('/html/body/div[2]/table/tbody/tr')
-        for pick in picks_ats_home[1:]:
-            item = prepare_item(this_game, 'ats_home')
-            yield item
+        # # item for ats_home
+        # picks_ats_home = response.xpath('/html/body/div[2]/table/tbody/tr')
+        # for pick in picks_ats_home[1:]:
+        #     item = prepare_item(this_game, 'ats_home')
+        #     yield item
 
         # item for ov_over
         # item for ov_under
