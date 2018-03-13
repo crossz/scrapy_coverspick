@@ -7,19 +7,15 @@ from covers.items import CoversItem
 class CoverspickSpider(scrapy.Spider):
     name = 'coverspick'
     allowed_domains = ['covers.com']
-    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-03-01']
 
-    days = 1
+    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-03-01']
+    days = 1 # days of pages to be downloaded.
 
     def parse(self, response):
-        # %% review purpose: yesterday game list
-        previous_page = response.xpath('//*[@class="cmg_matchup_three_day_navigation"]/a[1]/@href').extract_first()
-        # # '/Sports/NBA/Matchups?selectedDate=2018-03-09'
-        page_yestoday = response.urljoin(previous_page)
-
         # %% predict analysis purpose: tomorrow game list
         next_page = response.xpath('//*[@class="cmg_matchup_three_day_navigation"]/a[3]/@href').extract_first()
-        page_tmr = response.urljoin(next_page)
+        ## '/Sports/NBA/Matchups?selectedDate=2018-03-09'
+        page_tomorrow = response.urljoin(next_page)
 
         # %% today: alive games (game finished or not determined by the time)
         current_page = response.xpath('//*[@class="cmg_matchup_three_day_navigation"]/a[2]/@href').extract_first()
@@ -33,8 +29,8 @@ class CoverspickSpider(scrapy.Spider):
             yield response.follow(href, self.parse_consensus_page)
 
 
-        if int(page_tmr[-2:]) <= int(self.start_urls[0][-2:]) + self.days:
-            yield scrapy.Request(page_tmr, callback=self.parse)
+        if int(page_tomorrow[-2:]) <= int(self.start_urls[0][-2:]) + self.days:
+            yield scrapy.Request(page_tomorrow, callback=self.parse)
 
 
     def parse_consensus_page(self, response):
