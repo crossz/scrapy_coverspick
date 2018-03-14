@@ -3,6 +3,7 @@ import scrapy
 import re
 
 from covers.items import CoversItem
+from covers.items import ScoreItem
 
 class CoverspickSpider(scrapy.Spider):
     name = 'coverspick'
@@ -21,14 +22,36 @@ class CoverspickSpider(scrapy.Spider):
         current_page = response.xpath('//*[@class="cmg_matchup_three_day_navigation"]/a[2]/@href').extract_first()
         page_today = response.urljoin(current_page)
 
+        ## the date to be passed
+        matchup_date_string = response.url[response.url.find('=')+1:]
 
         # page to crawl
         the_page = page_today
         # yield scrapy.Request(the_page, callback=self.parse_gamelist)
         for href in response.xpath('//*[@id="content"]//div//a[.="Consensus"]/@href'):
-            yield response.follow(href, self.parse_consensus_page)
+            yield response.follow(href, self.parse_consensus_page, meta={'date_string':matchup_date_string})
+
+        
+        # score, teams, date to crawl
+        for matchup in response.css('div.cmg_matchup_game'):
+            item = ScoreItem()
+
+            div_teams = matchup.xpath('.//div[@class="cmg_team_name"]/text()').extract()
+            team_away = div_teams[0].strip()
+            team_home = div_teams[3].strip()
+            score_away = int(matchup.xpath('.//div[@class="cmg_matchup_list_score"]').css('div.cmg_matchup_list_score_away::text').extract_first())
+            score_home = int(matchup.xpath('.//div[@class="cmg_matchup_list_score"]').css('div.cmg_matchup_list_score_home::text').extract_first())
+            # matchup_date_string = response.url[response.url.find('=')+1:]
+
+            item['team_away'] = team_away
+            item['team_home'] = team_home
+            item['score_away'] = score_away
+            item['score_home'] = score_home
+            item['date'] = matchup_date_string
+            yield item
 
 
+        # next page to retrieve
         if int(page_tomorrow[-2:]) <= int(self.start_urls[0][-2:]) + self.days:
             yield scrapy.Request(page_tomorrow, callback=self.parse)
 
@@ -47,8 +70,9 @@ class CoverspickSpider(scrapy.Spider):
 
 
         # current date
-        date_string = response.xpath('//*[@id="mainContainer"]/p/text()').extract()[2].split(',')[1].strip()
+        # date_string = response.xpath('//*[@id="mainContainer"]/p/text()').extract()[2].split(',')[1].strip()
         ## ' - Thursday, March 1, 2018 7:30 PM\r\n'
+        date_string = response.meta['date_string']
 
 
         yield scrapy.Request(expert_api_url, callback=self.parse_consensus_expertlines, meta={'date_string':date_string})
