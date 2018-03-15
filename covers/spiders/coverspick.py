@@ -10,7 +10,7 @@ class CoverspickSpider(scrapy.Spider):
     allowed_domains = ['covers.com']
 
     start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-03-01']
-    days = 1 # days of pages to be downloaded.
+    days = 0 # days of pages to be downloaded.
 
     def parse(self, response):
         # %% predict analysis purpose: tomorrow game list
@@ -52,7 +52,7 @@ class CoverspickSpider(scrapy.Spider):
 
 
         # next page to retrieve
-        if int(page_tomorrow[-2:]) <= int(self.start_urls[0][-2:]) + self.days:
+        if int(page_tomorrow[-2:]) <= int(self.start_urls[0][-2:]) -1 + self.days:
             yield scrapy.Request(page_tomorrow, callback=self.parse)
 
 
