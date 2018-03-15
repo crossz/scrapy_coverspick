@@ -9,8 +9,8 @@ class CoverspickSpider(scrapy.Spider):
     name = 'coverspick'
     allowed_domains = ['covers.com']
 
-    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-03-01']
-    date_number = 2 # days of pages to be downloaded.
+    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-02-01']
+    date_number = 28 # days of pages to be downloaded.
 
     def parse(self, response):
         # %% predict analysis purpose: tomorrow game list
@@ -122,16 +122,18 @@ class CoverspickSpider(scrapy.Spider):
         # item for ats_away
         picks_ats_away = response.xpath('/html/body/div[1]/table/tbody/tr')
         if len(picks_ats_away.extract()) > 1:
-            temp1 = list([picks_ats_away[1]])
-            for pick in temp1:
+            # temp1 = list([picks_ats_away[1]])
+            # for pick in temp1:
+            for pick in picks_ats_away[1:]:
                 item = prepare_item(this_game, 'ats_away')
                 yield item
 
-        # # item for ats_home
-        # picks_ats_home = response.xpath('/html/body/div[2]/table/tbody/tr')
-        # for pick in picks_ats_home[1:]:
-        #     item = prepare_item(this_game, 'ats_home')
-        #     yield item
+        # item for ats_home
+        picks_ats_home = response.xpath('/html/body/div[2]/table/tbody/tr')
+        if len(picks_ats_home.extract()) > 1:
+            for pick in picks_ats_home[1:]:
+                item = prepare_item(this_game, 'ats_home')
+                yield item
 
         # item for ov_over
         # item for ov_under
