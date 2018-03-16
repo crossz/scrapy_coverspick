@@ -10,8 +10,8 @@ class CoverspickSpider(scrapy.Spider):
     name = 'coverspick'
     allowed_domains = ['covers.com']
 
-    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-02-01']
-    end_date = '2018-02-28' # days of pages to be downloaded.
+    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2017-10-17']
+    end_date = '2017-10-31'
 
     def parse(self, response):
         # %% predict analysis purpose: tomorrow game list
