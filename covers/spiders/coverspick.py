@@ -13,6 +13,18 @@ class CoverspickSpider(scrapy.Spider):
     start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2017-10-17']
     end_date = '2017-10-31'
 
+    # %% season 2017-18
+    # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2017-10-17']
+    # end_date = '2017-12-31'
+    # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-01-01']
+    # end_date = '2018-06-09'
+
+    # %% season 2018-19
+    # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-10-16']
+    # end_date = '2018-12-31'
+    # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-01-01']
+    # end_date = '2018-06-13'
+
     def parse(self, response):
         # %% predict analysis purpose: tomorrow game list
         next_page = response.xpath('//*[@class="cmg_matchup_three_day_navigation"]/a[3]/@href').extract_first()
