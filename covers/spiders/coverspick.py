@@ -10,10 +10,10 @@ class CoverspickSpider(scrapy.Spider):
     name = 'coverspick'
     allowed_domains = ['covers.com']
 
-    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2017-10-17']
-    end_date = '2017-10-31'
+    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-10-22']
+    end_date = '2019-12-31'
 
-    # %% season 2017-18
+    # %% season 2017-18; No expert pick data already on season 2019-20.
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2017-10-17']
     # end_date = '2017-12-31'
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-01-01']
@@ -22,8 +22,8 @@ class CoverspickSpider(scrapy.Spider):
     # %% season 2018-19
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-10-16']
     # end_date = '2018-12-31'
-    # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-01-01']
-    # end_date = '2018-06-13'
+    # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-01-01']
+    # end_date = '2019-06-13'
 
     def parse(self, response):
         # %% predict analysis purpose: tomorrow game list
@@ -140,12 +140,17 @@ class CoverspickSpider(scrapy.Spider):
                 item = prepare_item(this_game, 'ats_away')
                 yield item
 
-        # item for ats_home
-        picks_ats_home = response.xpath('/html/body/div[2]/table/tbody/tr')
-        if len(picks_ats_home.extract()) > 1:
-            for pick in picks_ats_home[1:]:
-                item = prepare_item(this_game, 'ats_home')
-                yield item
+
+
+        # # item for ats_home
+        # picks_ats_home = response.xpath('/html/body/div[2]/table/tbody/tr')
+        # if len(picks_ats_home.extract()) > 1:
+        #     for pick in picks_ats_home[1:]:
+        #         item = prepare_item(this_game, 'ats_home')
+        #         yield item
+
+
+
 
         # item for ov_over
         # item for ov_under
