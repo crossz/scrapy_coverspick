@@ -38,7 +38,8 @@ COOKIES_ENABLED = False # default: enabled
 
 ITEM_PIPELINES = {
     'covers.pipelines.pipelines.JsonWriterPipeline_4_matchups': 100,
-    'covers.pipelines.pipelines.JsonWriterPipeline_4_picks': 100,
+    'covers.pipelines.pipelines.JsonWriterPipeline_4_expertpickscount': 100,
+    'covers.pipelines.pipelines.JsonWriterPipeline_4_coverscontent': 100,
 #    'covers.pipelines.CoversPipeline': 300,
 #    'covers.pipelines.JsonWriterPipeline': 300,
 }

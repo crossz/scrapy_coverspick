@@ -6,8 +6,10 @@
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
 import json
-from covers.items import CoversItem
+
 from covers.items import ScoreItem
+from covers.items import ExpertpickItem
+from covers.items import CoversItem
 
 
 class JsonWriterPipeline_4_matchups(object):
@@ -24,8 +26,21 @@ class JsonWriterPipeline_4_matchups(object):
             self.file.write(line)
         return item
 
+class JsonWriterPipeline_4_expertpickscount(object):
 
-class JsonWriterPipeline_4_picks(object):
+    def open_spider(self, spider):
+        self.file = open('ExpertpickItem.jl', 'w')
+
+    def close_spider(self, spider):
+        self.file.close()
+
+    def process_item(self, item, spider):
+        if isinstance(item, ExpertpickItem):
+            line = json.dumps(dict(item)) + ",\n"
+            self.file.write(line)
+        return item
+
+class JsonWriterPipeline_4_coverscontent(object):
 
     def open_spider(self, spider):
         self.file = open('CoverspickItem.jl', 'w')

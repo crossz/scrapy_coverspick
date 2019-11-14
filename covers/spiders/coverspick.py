@@ -5,13 +5,18 @@ import time
 
 from covers.items import CoversItem
 from covers.items import ScoreItem
+from covers.items import ExpertpickItem
 
 class CoverspickSpider(scrapy.Spider):
     name = 'coverspick'
     allowed_domains = ['covers.com']
 
-    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-10-22']
-    end_date = '2019-12-31'
+
+    # TODO 生成当天的日期,以便生成 daily betting guide
+
+
+    # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-10-22']
+    # end_date = '2019-12-31'
 
     # %% season 2017-18; No expert pick data already on season 2019-20.
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2017-10-17']
@@ -22,8 +27,8 @@ class CoverspickSpider(scrapy.Spider):
     # %% season 2018-19
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-10-16']
     # end_date = '2018-12-31'
-    # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-01-01']
-    # end_date = '2019-06-13'
+    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-01-01']
+    end_date = '2019-06-13'
 
     def parse(self, response):
         # %% predict analysis purpose: tomorrow game list
@@ -41,9 +46,12 @@ class CoverspickSpider(scrapy.Spider):
 
         # condition to stop crawling
         if time.strptime(matchup_date_string, "%Y-%m-%d") <= time.strptime(self.end_date, "%Y-%m-%d"):
-            # pick page to crawl
-            for href in response.xpath('//*[@id="content"]//div//a[.="Consensus"]/@href'):
-                yield response.follow(href, self.parse_consensus_page, meta={'date_string':matchup_date_string})
+
+
+
+            # # pick page to crawl
+            # for href in response.xpath('//*[@id="content"]//div//a[.="Consensus"]/@href'):
+            #     yield response.follow(href, self.parse_consensus_page, meta={'date_string':matchup_date_string})
 
         
             # score, teams, date to crawl
@@ -56,13 +64,21 @@ class CoverspickSpider(scrapy.Spider):
                 score_away = matchup.xpath('.//div[@class="cmg_matchup_list_score"]').css('div.cmg_matchup_list_score_away::text').extract_first()
                 score_home = matchup.xpath('.//div[@class="cmg_matchup_list_score"]').css('div.cmg_matchup_list_score_home::text').extract_first()
                 # matchup_date_string = response.url[response.url.find('=')+1:]
+                game_string = team_away + '@' + team_home + '_ON_' + matchup_date_string
 
+                item['date_string'] = matchup_date_string
+                item['game_string'] = game_string
                 item['team_away'] = team_away
                 item['team_home'] = team_home
                 item['score_away'] = score_away
                 item['score_home'] = score_home
-                item['date'] = matchup_date_string
+                
                 yield item
+
+            # consensus link to crawl
+            # for matchup in response.css('div.cmg_matchup_game'):
+                consensus_href = matchup.xpath('.//div//a[.="Consensus"]/@href').extract_first()
+                yield response.follow(consensus_href, self.parse_consensus_page, meta={'date_string':matchup_date_string, 'game_string': game_string})
 
             # next page to crawl        
             yield scrapy.Request(page_tomorrow, callback=self.parse)
@@ -70,7 +86,7 @@ class CoverspickSpider(scrapy.Spider):
 
     def parse_consensus_page(self, response):
         '''
-        find the real link to the expert lines api, then send requests.
+        To find the real link to the expert lines api, then send requests.
         '''
         page_url = response.request.url
         # # 'https://contests.covers.com/Consensus/MatchupConsensusDetails/a80513f5-5ca8-47cc-ae21-a87e00f145d9?showExperts=False'
@@ -78,16 +94,16 @@ class CoverspickSpider(scrapy.Spider):
         gameHash = searchObj.group(1)
         expertApi_prefix = 'https://contests.covers.com/Consensus/MatchupConsensusExpertDetails/'
         expert_api_url = expertApi_prefix + gameHash
-        # print(' ------------------========================------------------------- ' + expert_api_url)
+        print(' ------------------========================------------------------- ' + expert_api_url)
 
 
         # current date
         # date_string = response.xpath('//*[@id="mainContainer"]/p/text()').extract()[2].split(',')[1].strip()
         ## ' - Thursday, March 1, 2018 7:30 PM\r\n'
         date_string = response.meta['date_string']
+        game_string = response.meta['game_string']
 
-
-        yield scrapy.Request(expert_api_url, callback=self.parse_consensus_expertlines, meta={'date_string':date_string})
+        yield scrapy.Request(expert_api_url, callback=self.parse_consensus_expertlines, meta={'date_string':date_string, 'game_string': game_string})
         
 
         # %% issues:
@@ -106,6 +122,26 @@ class CoverspickSpider(scrapy.Spider):
         '''
 
 
+        '''
+        To extract the summarized experts picks.
+        This can be used to generate one-page-overview for daily betting; Also, this can be used to do simple review for expert group's performance.
+        # 这个其实可以和 ScoreItem 放在一起, 但是由于这些数据不在同一个页面, 不方便同时存入一行数据里, 所以拆成 2 种 item 数据用以存储和分析.
+        '''
+        left_wagers_list = response.xpath('//div[@id="experts_analysis_content"]//div[@class="covers-CoversConsensusDetailsTable-awayWagers"]/text()').extract()
+        right_wagers_list = response.xpath('//div[@id="experts_analysis_content"]//div[@class="covers-CoversConsensusDetailsTable-homeWagers"]/text()').extract()
+
+        item = ExpertpickItem()
+        item['game_string'] = game_string
+        item['date_string'] = date_string
+        item['product1_left'] = left_wagers_list[0]
+        item['product1_right'] = right_wagers_list[0]
+        item['product2_left'] = left_wagers_list[1]
+        item['product2_right'] = right_wagers_list[1]
+
+        print(' ------------------========================------------------------- ' + game_string + ': ' + left_wagers_list[0] + ' vs ' + right_wagers_list[0] + ' AND ' + left_wagers_list[1] + ' vs ' + right_wagers_list[1])
+
+        yield item
+
     def parse_consensus_expertlines(self, response):
         '''
         find the real link to the expert lines api, then send requests.
@@ -115,8 +151,8 @@ class CoverspickSpider(scrapy.Spider):
             item = CoversItem()
             item['pick_product'] = pick_product
 
-            item['date'] = response.meta['date_string']
-            item['game'] = this_game_string
+            item['date_string'] = response.meta['date_string']
+            item['game_string'] = response.meta['game_string']
 
             item['leader'] = pick.xpath('td[1]//text()').extract_first()
             item['pick_team'] = pick.xpath('td[2]/div/a//text()').extract_first()
@@ -125,11 +161,11 @@ class CoverspickSpider(scrapy.Spider):
             return item
 
 
-        pick_options = response.css('div.covers-CoversConsensus-leagueHeader::text').extract()
-        team_away = pick_options[0][pick_options[0].find('for ')+4:]
-        team_home = pick_options[1][pick_options[1].find('for ')+4:]
-
-        this_game = team_away + ' AT ' + team_home
+        # pick_options = response.css('div.covers-CoversConsensus-leagueHeader::text').extract()
+        # team_away = pick_options[0][pick_options[0].find('for ')+4:]
+        # team_home = pick_options[1][pick_options[1].find('for ')+4:]
+        # this_game = team_away + ' AT ' + team_home
+        this_game = response.css('p.covers-CoversConsensus-detailsGameDate span::text').extract_first()
 
         # item for ats_away
         picks_ats_away = response.xpath('/html/body/div[1]/table/tbody/tr')
@@ -142,12 +178,12 @@ class CoverspickSpider(scrapy.Spider):
 
 
 
-        # # item for ats_home
-        # picks_ats_home = response.xpath('/html/body/div[2]/table/tbody/tr')
-        # if len(picks_ats_home.extract()) > 1:
-        #     for pick in picks_ats_home[1:]:
-        #         item = prepare_item(this_game, 'ats_home')
-        #         yield item
+        # item for ats_home
+        picks_ats_home = response.xpath('/html/body/div[2]/table/tbody/tr')
+        if len(picks_ats_home.extract()) > 1:
+            for pick in picks_ats_home[1:]:
+                item = prepare_item(this_game, 'ats_home')
+                yield item
 
 
 
