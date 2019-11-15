@@ -2,6 +2,7 @@
 import scrapy
 import re
 import time
+import datetime
 
 from covers.items import CoversItem
 from covers.items import ScoreItem
@@ -12,9 +13,11 @@ class CoverspickSpider(scrapy.Spider):
     allowed_domains = ['covers.com']
 
 
-    # TODO 生成当天的日期,以便生成 daily betting guide
+    ## mode for one-day-guide/review.
+    start_urls = ['https://www.covers.com/Sports/NBA/Matchups']
 
 
+    ## mode for batch download w/ start_date/end_date.
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-10-22']
     # end_date = '2019-12-31'
 
@@ -27,8 +30,12 @@ class CoverspickSpider(scrapy.Spider):
     # %% season 2018-19
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-10-16']
     # end_date = '2018-12-31'
-    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-01-01']
-    end_date = '2019-06-13'
+    # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-01-01']
+    # end_date = '2019-06-13'
+
+    if 'end_date' not in locals():
+        # end_date = str(datetime.date.today() + datetime.timedelta(+1))
+        end_date = str(datetime.date.today())
 
     def parse(self, response):
         # %% predict analysis purpose: tomorrow game list
@@ -39,9 +46,15 @@ class CoverspickSpider(scrapy.Spider):
         # %% today: alive games (game finished or not determined by the time)
         current_page = response.xpath('//*[@class="cmg_matchup_three_day_navigation"]/a[2]/@href').extract_first()
         page_today = response.urljoin(current_page)
-
+        
+        
+        ## ---------------- mode for daily one-page-guide/review or batch download w/ start_date/end_date ----------------
         ## the date to be passed
-        matchup_date_string = response.url[response.url.find('=')+1:]
+        if response.url.find('=') == -1:
+            matchup_date_string = str(datetime.date.today() + datetime.timedelta(-1))
+        else:
+            matchup_date_string = response.url[response.url.find('=')+1:] ## the date to be passed
+        ## */ ---------------- mode END ----------------
 
 
         # condition to stop crawling
