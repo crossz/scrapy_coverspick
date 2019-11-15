@@ -79,8 +79,9 @@ class CoverspickSpider(scrapy.Spider):
                 # matchup_date_string = response.url[response.url.find('=')+1:]
                 game_string = team_away + '@' + team_home + '_ON_' + matchup_date_string
 
-                item['date_string'] = matchup_date_string
                 item['game_string'] = game_string
+                item['date_string'] = matchup_date_string
+                
                 item['team_away'] = team_away
                 item['team_home'] = team_home
                 item['score_away'] = score_away
@@ -164,8 +165,8 @@ class CoverspickSpider(scrapy.Spider):
             item = CoversItem()
             item['pick_product'] = pick_product
 
-            item['date_string'] = response.meta['date_string']
             item['game_string'] = response.meta['game_string']
+            item['date_string'] = response.meta['date_string']
 
             item['leader'] = pick.xpath('td[1]//text()').extract_first()
             item['pick_team'] = pick.xpath('td[2]/div/a//text()').extract_first()
