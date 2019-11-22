@@ -29,6 +29,8 @@ class ScoreItem(scrapy.Item):
     team_home = scrapy.Field()
     score_away = scrapy.Field()
     score_home = scrapy.Field()
+    ats = scrapy.Field()
+    hilo = scrapy.Field()
 
 class ExpertpickItem(scrapy.Item):
     # define the fields for your item here like:

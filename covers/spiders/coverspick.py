@@ -30,8 +30,8 @@ class CoverspickSpider(scrapy.Spider):
     # %% season 2018-19
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-10-16']
     # end_date = '2018-12-31'
-    # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-01-01']
-    # end_date = '2019-06-13'
+    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-01-01']
+    end_date = '2019-06-13'
 
     if 'end_date' not in locals():
         # end_date = str(datetime.date.today() + datetime.timedelta(+1))
@@ -76,6 +76,11 @@ class CoverspickSpider(scrapy.Spider):
                 team_home = div_teams[3].strip()
                 score_away = matchup.xpath('.//div[@class="cmg_matchup_list_score"]').css('div.cmg_matchup_list_score_away::text').extract_first()
                 score_home = matchup.xpath('.//div[@class="cmg_matchup_list_score"]').css('div.cmg_matchup_list_score_home::text').extract_first()
+                ats = matchup.xpath('.//div[@class="cmg_matchup_game_box cmg_game_data"]/@data-game-odd').extract_first()
+                hilo = matchup.xpath('.//div[@class="cmg_matchup_game_box cmg_game_data"]/@data-game-total').extract_first()
+
+                # ats = 
+                # hilo = 
                 # matchup_date_string = response.url[response.url.find('=')+1:]
                 game_string = team_away + '@' + team_home + '_ON_' + matchup_date_string
 
@@ -86,6 +91,8 @@ class CoverspickSpider(scrapy.Spider):
                 item['team_home'] = team_home
                 item['score_away'] = score_away
                 item['score_home'] = score_home
+                item['ats'] = ats
+                item['hilo'] = hilo
                 
                 yield item
 
