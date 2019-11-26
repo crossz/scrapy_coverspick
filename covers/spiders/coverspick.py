@@ -30,8 +30,8 @@ class CoverspickSpider(scrapy.Spider):
     # %% season 2018-19
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-10-16']
     # end_date = '2018-12-31'
-    start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-01-01']
-    end_date = '2019-06-13'
+    # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-01-01']
+    # end_date = '2019-06-13'
 
     if 'end_date' not in locals():
         # end_date = str(datetime.date.today() + datetime.timedelta(+1))
