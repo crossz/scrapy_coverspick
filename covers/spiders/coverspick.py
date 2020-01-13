@@ -170,12 +170,12 @@ class CoverspickSpider(scrapy.Spider):
 
         def prepare_item(this_game_string, pick_product):
             item = CoversItem()
-            item['pick_team'] = pick.xpath('td[2]/div/a//text()').extract_first()
             
             item['game_string'] = response.meta['game_string']
+            item['pick_line'] = pick.xpath('td[2]/div/span//text()').extract_first()
+            item['pick_team'] = pick.xpath('td[2]/div/a//text()').extract_first()
             item['pick_desc'] = pick.xpath('td[3]//text()').extract_first()
             item['pick_product'] = pick_product
-            item['pick_line'] = pick.xpath('td[2]/div/span//text()').extract_first()
             item['date_string'] = response.meta['date_string']    
             item['leader'] = pick.xpath('td[1]//text()').extract_first()
             # return item
