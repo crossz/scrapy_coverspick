@@ -27,7 +27,7 @@ class CoverspickSpider(scrapy.Spider):
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-01-01']
     # end_date = '2018-06-09'
 
-    # %% season 2018-19
+    # %% season 2018-19; No expert pick data already from Jan 2020.
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2018-10-16']
     # end_date = '2018-12-31'
     # start_urls = ['https://www.covers.com/Sports/NBA/Matchups?selectedDate=2019-01-01']
@@ -178,8 +178,9 @@ class CoverspickSpider(scrapy.Spider):
             item['pick_product'] = pick_product
             item['date_string'] = response.meta['date_string']    
             item['leader'] = pick.xpath('td[1]//text()').extract_first()
+            
+            
             # return item
-
             desc = item['pick_desc']
             if desc.find("#1 ") != -1 or desc.find("#2 ") != -1:
                 return item
